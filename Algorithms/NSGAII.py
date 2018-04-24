@@ -27,6 +27,7 @@ import pdb
 import random
 import sys
 
+import time
 from deap import tools
 from deap.tools import sortLogNondominated
 from stats.xmlTools import write_results_to_xml
@@ -82,7 +83,7 @@ def nsgaii(model, mu, ngen, cxpb, mutpb):
 if __name__ == '__main__':
     logging.basicConfig(format='%(asctime)s %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p', stream=sys.stdout,
                         level=logging.DEBUG)
-    model = get_pom3('p3a')
+    model = get_pom3('p3b')
+    startat = time.time()
     res = nsgaii(model, mu=100, ngen=100, cxpb=0.9, mutpb=0.1)
-    write_results_to_xml("debug_writing", res, model, 'nsgaii')
-    pdb.set_trace()
+    write_results_to_xml("debug_writing2", res, model, 'nsgaii', runtime = time.time()-startat)
