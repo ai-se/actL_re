@@ -1,10 +1,7 @@
 from __future__ import division
 
-import array
-import random
-
+import numpy as np
 import pandas as pd
-from deap import base, creator
 
 from Benchmarks.XOMO_Base.xomo_liaison import xomol
 
@@ -57,64 +54,23 @@ class XOMO(object):
             if min(val) == max(val):
                 self.bound[key] = (min(val), max(val) + 0.000001)  # avoid divide-by-zero error
 
-        creator.create('FitnessMin', base.Fitness, weights=(-1.0, -1.0, -1.0, -1.0))
-        creator.create('Individual', array.array, typecode='d', fitness=creator.FitnessMin)
-
         self.decsNum = len(names)
         self.decs = names
         self.obj_bound = obj_bound
+        self.objNum = 4
+        self.columns = names + ['o' + str(i) + '_' for i in range(self.objNum)]
 
-        self.creator = creator
-        self.Individual = creator.Individual
-
-        self.toolbox = base.Toolbox()
-        self.toolbox.register('evaluate', self.eval_ind)
-
-    def eval(self, input, normalized=True):
-        if type(input) is pd.DataFrame:
-            return self.eval_pd_df(input, normalized=normalized)
-        elif type(input) is pd.Series:
-            return self.eval_pd_series(input, normalized=normalized)
-        elif type(input) is self.Individual:
-            return self.eval_ind(input, normalized=normalized)
-        else:
-            assert True, "warning: check here"
-
-    def eval_ind(self, ind, normalized=True):
-        # demoralize the ind
-        dind = []
-        for dn, v in zip(self.decs, ind):
-            m, M = self.bound[dn]
-            dind.append(v * (M - m) + m)
-
-        xomoxo = xomol()
-        output = xomoxo.run(dind)
-
-        if not normalized:
-            ind.fitness.values = output
-        else:
-            noutput = list()
-            for (m, M), v in zip(self.obj_bound, output):
-                if v > M:
-                    noutput.append(1)
-                else:
-                    noutput.append((v - m) / (M - m))
-            ind.fitness.values = noutput
-
-        return ind.fitness.values
-
-    def eval_pd_series(self, s, normalized=True):
+    def _eval(self, df, index, normalized=True):
         dind = []
         for dn in self.decs:
             m, M = self.bound[dn]
-            v = s[dn]
+            v = df.loc[index, dn]
             dind.append(v * (M - m) + m)
 
         xomoxo = xomol()
         output = xomoxo.run(dind)
-
         if not normalized:
-            return output
+            res = output
         else:
             noutput = list()
             for (m, M), v in zip(self.obj_bound, output):
@@ -122,14 +78,27 @@ class XOMO(object):
                     noutput.append(1)
                 else:
                     noutput.append((v - m) / (M - m))
-            return noutput
+            res = noutput
+
+        for i in range(self.objNum):
+            df.loc[index, 'o%d_' % i] = res[i]
+
+    def init_random_pop(self, size):
+        """ return a DataFrame
+        Note: all objective were set as -1, an indicator of not assigned.
+        :param size: number of population
+        :return: pd.DataFrame
+        """
+        df = pd.DataFrame(data=np.random.rand(size, len(self.columns)), columns=self.columns)
+
+        for i in range(self.objNum):
+            df['o%d_' % i] = -1
+
+        return df
 
     def eval_pd_df(self, df, normalized=True):
-        results = list()
-        for line in range(df.shape[0]):
-            res = self.eval_pd_series(df.iloc[line, :], normalized=normalized)
-            results.append(res)
-        return results
+        for ind in df.index:
+            self._eval(df, ind, normalized=normalized)
 
 
 # bounds specific to osp model
@@ -244,6 +213,6 @@ def get_xomo(version):
 
 if __name__ == '__main__':
     model = get_xomo('osp')
-    for _ in range(50):
-        ind = model.Individual([random.random() for _ in range(model.decsNum)])
-        print(model.eval(ind, False))
+    df = model.init_random_pop(5)
+    model.eval_pd_df(df, normalized=False)
+    print(df)
