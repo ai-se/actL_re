@@ -44,7 +44,7 @@ def GS(PF0, PFc):
 
     d2 = list()
     for s in PFc:
-        d = 'inf'
+        d = -float('inf')
         for o in PFc:
             if s == o: continue
             d = min(d, dist(s, o))

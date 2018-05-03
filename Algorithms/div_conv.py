@@ -36,7 +36,7 @@ from deap.tools import sortLogNondominated
 from scipy.spatial import distance
 
 from Benchmarks.POM3 import get_pom3
-from stats.xmlTools import write_results_to_xml
+from stats.statsReporting import write_results_to_txt
 
 
 def creat_DEAP_individuals(model, decs, objs):
@@ -104,4 +104,4 @@ if __name__ == '__main__':
     startat = time.time()
     res = riot(model, num_random=100)
     print("TIME = ", time.time() - startat)
-    write_results_to_xml("debug_writing", res, model, 'riot')
+    write_results_to_txt("debug_writing", res, model, 'riot')

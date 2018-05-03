@@ -1,7 +1,10 @@
 from __future__ import division
 
+import array
+
 import numpy as np
 import pandas as pd
+from deap import creator, base
 
 from Benchmarks.XOMO_Base.xomo_liaison import xomol
 
@@ -54,11 +57,18 @@ class XOMO(object):
             if min(val) == max(val):
                 self.bound[key] = (min(val), max(val) + 0.000001)  # avoid divide-by-zero error
 
-        self.decsNum = len(names)
+        self.decNum = len(names)
         self.decs = names
         self.obj_bound = obj_bound
         self.objNum = 4
         self.columns = names + ['o' + str(i) + '_' for i in range(self.objNum)]
+
+        # FOR THE DEAP MODULES, use creator.Ind_xomo as individual type
+        if not hasattr(creator, 'F4m'):
+            creator.create('F4m', base.Fitness, weights=(-1.0, -1.0, -1.0, -1.0))
+
+        if not hasattr(creator, 'Ind_xomo'):
+            creator.create('Ind_xomo', array.array, typecode='d', fitness=creator.F4m)
 
     def _eval(self, df, index, normalized=True):
         dind = []
@@ -81,7 +91,7 @@ class XOMO(object):
             res = noutput
 
         for i in range(self.objNum):
-            df.loc[index, 'o%d_' % i] = res[i]
+            df.loc[index, 'o%d_' % i] = round(res[i], 4)
 
     def init_random_pop(self, size):
         """ return a DataFrame
@@ -99,6 +109,46 @@ class XOMO(object):
     def eval_pd_df(self, df, normalized=True):
         for ind in df.index:
             self._eval(df, ind, normalized=normalized)
+
+    def pd_to_deap(self, pandas_df):
+        """
+        Transferring the pandas dataframe to DEAP individual objects
+        Did not evaluate any configuration
+        Copy to deap if any configurations is(are) evaluated
+
+        Terminated: execution time of this function is far less than evaluation time
+        :param pandas_df:
+        :return:
+        """
+
+        pop = list()
+        for ind in pandas_df.index:
+            config = list()
+            for ci in self.decs:
+                config.append(pandas_df.loc[ind, ci])
+            config_obj = creator.Ind_xomo(config)
+
+            if pandas_df.loc[ind, 'o0_'] != -1:  # evaluated
+                config_obj.fitness.values = [pandas_df.loc[ind, 'o%d_' % i] for i in range(self.objNum)]
+
+            pop.append(config_obj)
+
+        return pop
+
+    def deap_to_pd(self, pop):
+        """
+        Transfearring the DEAP population object to pandas obj
+        :param pop:
+        :return:
+        """
+        df = self.init_random_pop(len(pop))
+        for i, deap_con_obj in enumerate(pop):
+            for j, attr in enumerate(self.decs):
+                df.loc[i, attr] = deap_con_obj[j]
+            if deap_con_obj.fitness.valid:
+                for o in range(self.objNum):
+                    df.loc[i, 'o%d_' % o] = deap_con_obj.fitness.values[o]
+        return df
 
 
 # bounds specific to osp model

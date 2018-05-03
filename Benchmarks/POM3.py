@@ -1,7 +1,10 @@
 from __future__ import division
 
+import array
+
 import numpy as np
 import pandas as pd
+from deap import base, creator
 
 from Benchmarks.POM3_Base.pom3 import pom3
 
@@ -28,6 +31,13 @@ class POM3(object):
 
         self.columns = names + ['o' + str(i) + '_' for i in range(self.objNum)]
 
+        # FOR THE DEAP MODULES, use creator.Ind_pom3 as individual type
+        if not hasattr(creator, 'F3m'):
+            creator.create('F3m', base.Fitness, weights=(-1.0, -1.0, -1.0, -1.0))
+
+        if not hasattr(creator, 'Ind_pom3'):
+            creator.create('Ind_pom3', array.array, typecode='d', fitness=creator.F3m)
+
     def _eval(self, df, index, normalized=True):
         dind = []
         for dn in self.decs:
@@ -42,14 +52,12 @@ class POM3(object):
         else:
             noutput = list()
             for (m, M), v in zip(self.obj_bound, output):
-                if v > M:
-                    noutput.append(1)
-                else:
-                    noutput.append((v - m) / (M - m))
+                tmp = (v - m) / (M - m)
+                noutput.append(min(max(tmp, 0), 1))
             res = noutput
 
         for i in range(self.objNum):
-            df.loc[index, 'o%d_' % i] = res[i]
+            df.loc[index, 'o%d_' % i] = round(res[i], 4)
 
     def init_random_pop(self, size):
         """ return a DataFrame
@@ -66,7 +74,48 @@ class POM3(object):
 
     def eval_pd_df(self, df, normalized=True):
         for ind in df.index:
+            if df.loc[ind, 'o0_'] != -1: continue
             self._eval(df, ind, normalized=normalized)
+
+    def pd_to_deap(self, pandas_df):
+        """
+        Transferring the pandas dataframe to DEAP individual objects
+        Did not evaluate any configuration
+        Copy to deap if any configurations is(are) evaluated
+
+        Terminated: execution time of this function is far less than evaluation time
+        :param pandas_df:
+        :return:
+        """
+
+        pop = list()
+        for ind in pandas_df.index:
+            config = list()
+            for ci in self.decs:
+                config.append(pandas_df.loc[ind, ci])
+            config_obj = creator.Ind_pom3(config)
+
+            if pandas_df.loc[ind, 'o0_'] != -1:  # evaluated
+                config_obj.fitness.values = [pandas_df.loc[ind, 'o%d_' % i] for i in range(self.objNum)]
+
+            pop.append(config_obj)
+
+        return pop
+
+    def deap_to_pd(self, pop):
+        """
+        Transfearring the DEAP population object to pandas obj
+        :param pop:
+        :return:
+        """
+        df = self.init_random_pop(len(pop))
+        for i, deap_con_obj in enumerate(pop):
+            for j, attr in enumerate(self.decs):
+                df.loc[i, attr] = deap_con_obj[j]
+            if deap_con_obj.fitness.valid:
+                for o in range(self.objNum):
+                    df.loc[i, 'o%d_' % o] = deap_con_obj.fitness.values[o]
+        return df
 
 
 # bounds specific to pom3 model
@@ -75,22 +124,25 @@ bounds_pom3b = [[0.10, 0.82, 80, 0.40, 0, 1, 0, 0, 1], [0.90, 1.26, 95, 0.70, 10
 bounds_pom3c = [[0.50, 0.82, 2, 0.20, 0, 40, 2, 0, 20], [0.90, 1.26, 8, 0.50, 50, 50, 4, 5, 44]]
 bounds_pom3d = [[0.10, 0.82, 2, 0.60, 80, 1, 0, 0, 10], [0.20, 1.26, 8, 0.95, 100, 10, 2, 5, 20]]
 
-objs_bound = [[0, 1300], [0, 0.7], [0, 0.65]]
+objs_bounda = [[0, 1900], [0, 0.7], [0, 0.65]]
+objs_boundb = [[1800, 25000], [0, 0.7], [0, 0.65]]
+objs_boundc = [[300, 2300], [0.4, 0.7], [0, 0.65]]
 
 
 def get_pom3(version):
     if version == 'p3a':
-        return POM3('p3a', bounds_pom3a, objs_bound)
+        return POM3('p3a', bounds_pom3a, objs_bounda)
     if version == 'p3b':
-        return POM3('p3b', bounds_pom3b, objs_bound)
+        return POM3('p3b', bounds_pom3b, objs_boundb)
     if version == 'p3c':
-        return POM3('p3c', bounds_pom3c, objs_bound)
-    if version == 'p3d':
-        return POM3('p3d', bounds_pom3d, objs_bound)
+        return POM3('p3c', bounds_pom3c, objs_boundc)
 
 
 if __name__ == '__main__':
-    model = get_pom3('p3a')
-    df = model.init_random_pop(5)
-    model.eval_pd_df(df, normalized=False)
-    print(df)
+    model = get_pom3('p3c')
+    df = model.init_random_pop(100)
+    model.eval_pd_df(df, normalized=True)
+    print(min(df.o0_), max(df.o0_))
+    print(min(df.o1_), max(df.o1_))
+    print(min(df.o2_), max(df.o2_))
+    # pdb.set_trace()

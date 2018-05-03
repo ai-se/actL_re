@@ -1,0 +1,2 @@
+{"model": "p3a", "algorithm": "nsgaii", "runtime": 5.279381036758423}
+{"model": "p3a", "algorithm": "nsgaii", "hv": 0.884437685365}
