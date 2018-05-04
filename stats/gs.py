@@ -24,33 +24,22 @@
 
 from __future__ import division
 
-import operator
-
 
 def dist(a, b):
     return sum((i - j) ** 2 for i, j in zip(a, b))
 
 
 def GS(PF0, PFc):
-    # get all e_k
-    e_k = list()
-    for col in zip(*PF0):
-        min_index, min_value = min(enumerate(col), key=operator.itemgetter(1))
-        e_k.append(PF0[min_index])
+    # https: // ieeexplore.ieee.org / stamp / stamp.jsp?tp = & arnumber = 996017
+    # sorting the objectives
+    PF0 = sorted(PF0, key=lambda ind: [o for o in ind])
+    PFc = sorted(PFc, key=lambda ind: [o for o in ind])
 
-    dl = 0
-    for c in e_k:
-        dl += min([dist(c, i) for i in PFc])
+    df = dist(PF0[0], PFc[0])
+    dl = dist(PF0[-1], PFc[-1])
+    di = [dist(i, j) for i, j in zip(PFc[:-1], PFc[1:])]
+    d_avg = sum(di) / len(di)
 
-    d2 = list()
-    for s in PFc:
-        d = -float('inf')
-        for o in PFc:
-            if s == o: continue
-            d = min(d, dist(s, o))
-        d2.append(d)
-    meand = sum(d2) / len(d2)
-    dr = sum([abs(i - meand) for i in d2])
-    gs = (dl + dr) / (dl + len(d2) * meand)
-
+    dr = sum([abs(i - d_avg) for i in di])
+    gs = (df + dl + dr) / (df + dl + (len(di) - 1) * d_avg)
     return gs

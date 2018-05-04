@@ -26,7 +26,6 @@ import io
 import json
 import os
 import os.path
-import pdb
 import time
 
 import numpy as np
@@ -150,8 +149,7 @@ def report_quality(experiment_id):
                     break
             PF0 = tf[obj_matrix.columns].values.tolist()
             PFc = obj_matrix.values.tolist()
-            pdb.set_trace()
-            gs = GS(PF0, PFc)  # TODO debug this func
+            gs = GS(PF0, PFc)
             json.dump({'model'    : info['model'],
                        'algorithm': info['algorithm'],
                        'gs'       : gs
@@ -213,7 +211,7 @@ def construct_PF0(sinceTimeStamp=0):
 
 
 if __name__ == '__main__':
-    report_quality('debug_writing2')
+    report_quality('debug_writing3')
     # for info, res in _read_next_raw('debug_writing2'):
     #     print(info, res)
     #     pdb.set_trace()

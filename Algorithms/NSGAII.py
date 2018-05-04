@@ -22,7 +22,6 @@
 #  THE SOFTWARE.
 
 import logging
-import pdb
 import random
 import sys
 import time
