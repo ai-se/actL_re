@@ -1,6 +1,0 @@
-{"model": "p3a", "algorithm": "nsgaii", "runtime": 3.0683720111846924}
-{"model": "p3a", "algorithm": "nsgaii", "hv": 0.8609934688469999}
-{"model": "p3a", "algorithm": "nsgaii", "gs": 0.9549024324884836}
-{"model": "p3b", "algorithm": "nsgaii", "runtime": 0.7483770847320557}
-{"model": "p3b", "algorithm": "nsgaii", "hv": 0.9344586530940001}
-{"model": "p3b", "algorithm": "nsgaii", "gs": 1.0257753800715697}

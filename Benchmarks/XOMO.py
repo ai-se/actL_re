@@ -61,7 +61,8 @@ class XOMO(object):
         self.decs = names
         self.obj_bound = obj_bound
         self.objNum = 4
-        self.columns = names + ['o' + str(i) + '_' for i in range(self.objNum)]
+        self.objs = ['o' + str(i) + '_' for i in range(self.objNum)]
+        self.columns = names + self.objs
 
         # FOR THE DEAP MODULES, use creator.Ind_xomo as individual type
         if not hasattr(creator, 'F4m'):
@@ -93,13 +94,17 @@ class XOMO(object):
         for i in range(self.objNum):
             df.loc[index, 'o%d_' % i] = round(res[i], 4)
 
-    def init_random_pop(self, size):
+    def init_random_pop(self, size, default_value=None):
         """ return a DataFrame
         Note: all objective were set as -1, an indicator of not assigned.
         :param size: number of population
+        :param default_value: set all values as the same
         :return: pd.DataFrame
         """
-        df = pd.DataFrame(data=np.random.rand(size, len(self.columns)), columns=self.columns)
+        if default_value is not None:
+            df = pd.DataFrame(data=np.ones([size, len(self.columns)]) * default_value, columns=self.columns)
+        else:
+            df = pd.DataFrame(data=np.random.rand(size, len(self.columns)), columns=self.columns)
 
         for i in range(self.objNum):
             df['o%d_' % i] = -1

@@ -1,9 +1,0 @@
-{"model": "p3a", "algorithm": "nsgaii", "runtime": 5.279381036758423}
-{"model": "p3a", "algorithm": "nsgaii", "hv": 0.884437685365}
-{"model": "p3a", "algorithm": "nsgaii", "gs": 0.5740216313008205}
-{"model": "p3a", "algorithm": "nsgaii", "runtime": 4.95907998085022}
-{"model": "p3a", "algorithm": "nsgaii", "hv": 0.8356514739679999}
-{"model": "p3a", "algorithm": "nsgaii", "gs": 1.4645650521442448}
-{"model": "p3a", "algorithm": "nsgaii", "runtime": 3.8990280628204346}
-{"model": "p3a", "algorithm": "nsgaii", "hv": 0.9013447249389999}
-{"model": "p3a", "algorithm": "nsgaii", "gs": 1.4501164230054835}

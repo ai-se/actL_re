@@ -67,7 +67,7 @@ class _HyperVolume:
         referencePoint = self.referencePoint
         dimensions = len(referencePoint)
         #######
-        # fmder: Here it is assumed that every point dominates the reference point
+        # fmder: Here it is assumed that every point _dominates the reference point
         # for point in front:
         #     # only consider points that dominate the reference point
         #     if weaklyDominates(point, referencePoint):

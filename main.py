@@ -20,11 +20,19 @@
 #  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 #  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 #  THE SOFTWARE.
+
+import argparse
+import datetime
 import logging
+import random
 import sys
 import time
+from multiprocessing import Process
+
+import numpy as np
 
 from Algorithms.NSGAII import nsgaii
+from Algorithms.div_conv import riot
 from Benchmarks.POM3 import get_pom3
 from Benchmarks.XOMO import get_xomo
 from stats.statsReporting import write_results_to_txt
@@ -43,21 +51,59 @@ def _get_model_for_name(model_str):
     return models[model_str]
 
 
-def run_nsga_ii(model, expId):
+def exec_nsgaii(model, expId):
     # TODO CONFIGURATIONS HERE
     mu = 100
     ngen = 20
     cxpb = 0.9
     mutpb = 0.1
     # END OF CONFIGURATION
-
-    logging.basicConfig(format='%(asctime)s %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p', stream=sys.stdout,
-                        level=logging.DEBUG)
+    np.random.seed()
     model = _get_model_for_name(model) if type(model) is str else model
     startat = time.time()
     res = nsgaii(model, mu, ngen, cxpb, mutpb)
     write_results_to_txt(expId, res, model, 'nsgaii', runtime=time.time() - startat)
 
 
+def exec_riot(model, expId):
+    # TODO Configuration comes here
+    num_anchor = 30
+    num_random = 1000
+    # End of configuration
+    np.random.seed()
+    model = _get_model_for_name(model) if type(model) is str else model
+    startat = time.time()
+    res = riot(model, num_anchor=num_anchor, num_random=num_random)
+    write_results_to_txt(expId, res, model, 'riot', runtime=time.time() - startat)
+
+
 if __name__ == '__main__':
-    run_nsga_ii('p3a', 'testing_main')
+    # setting up the sys parameters
+    parser = argparse.ArgumentParser(description="Active learning experiment platform for SE requirement engineering")
+    parser.add_argument('-m', '--model', help="Set up the exp model or pom3 if not set", required=False)
+    parser.add_argument('-i', '--id', help="Set up experiment ID or use random if not set", required=False)
+    parser.add_argument('-M', '--method', help="set method, nsgaii/riot", required=True)
+    parser.add_argument('-r', '--repeat', help="set how many repeats, each repeat uses one core", required=False)
+    args = vars(parser.parse_args())
+
+    model = args['model'] or 'p3a'
+    repeats = args['repeat'] or 1
+    repeats = int(repeats)
+
+    logging.basicConfig(format='%(asctime)s %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p', stream=sys.stdout,
+                        level=logging.DEBUG)
+    exec = getattr(sys.modules[__name__], 'exec_' + args['method'])
+
+    expId = args['id'] or str(random.randint(1, 10000))
+    expId = datetime.date.today().strftime("%b%d%Y") + '_' + expId
+
+    if repeats == 1:
+        exec(model, expId)
+    else:
+        p = list()
+        for _ in range(repeats):
+            p.append(Process(target=exec, args=(model, expId)))
+            p[-1].start()
+
+        for i in p:
+            i.join()

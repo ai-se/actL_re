@@ -32,69 +32,69 @@ import time
 
 import numpy as np
 import pandas as pd
-from deap.tools import sortLogNondominated
 from scipy.spatial import distance
 
 from Benchmarks.POM3 import get_pom3
+from stats.pd_dominance import cull
 from stats.statsReporting import write_results_to_txt
 
 
-def creat_DEAP_individuals(model, decs, objs):
+def riot(M, num_anchor=30, num_random=1000):
     """
-
-    :param model:
-    :param decs: type=df.DataFrame
-    :param objs: type=df.DataFrame
-    :return: list of model.Individual
+    check out IEEE CLOUD18 paper
+    :param M:
+    :param num_anchor:
+    :param num_random:
+    :return:
     """
-    individuals = list()
-    for i in decs.index:
-        ind = model.Individual(decs.loc[i, :])
-        ind.fitness.values = objs.loc[i, :]
-        individuals.append(ind)
-    return individuals
+    logging.debug("Working on model " + M.name + " @ div_conv.py::riot")
 
-
-def riot(model, num_anchor=30, num_random=1000):
-    logging.debug("Working on model " + model.name + " @ div_conv.py::riot")
-    d = model.decNum
-    rand_anchor = pd.DataFrame(data=np.random.rand(num_anchor, d), columns=model.decs)
-    diag_anchor = pd.DataFrame(data=np.random.rand(d, d), columns=model.decs)
+    anchors = M.init_random_pop(num_anchor)
+    # add some diagonals also
+    d = M.decNum
     for i in range(d):
-        diag_anchor.iloc[i, :] = [i * 1 / (d - 1)] * d
+        diag = M.init_random_pop(1, default_value=i / (d - 1))
+        anchors = pd.merge(anchors, diag, how='outer')
 
-    anchors = pd.concat([rand_anchor, diag_anchor], ignore_index=True)
-    anchor_objs = pd.DataFrame(data=model.eval(anchors, normalized=False), index=anchors.index)
+    M.eval_pd_df(anchors)
+    logging.debug("Evaluating %d anchors done" % anchors.shape[0])
 
-    # randomly generated large amount of candidates
-    randoms = pd.DataFrame(data=np.random.rand(num_random, d), columns=model.decs)
-    random_objs_hat = pd.DataFrame(data=np.zeros([num_random, model.objNum]), index=randoms.index)
+    randoms = M.init_random_pop(num_random)
 
-    # guessing every objective
-    for r_index in randoms.index:
-        if r_index % 200 == 0:
-            logging.debug("Runing at " + str(r_index))
+    DIST_MTX = pd.DataFrame(index=anchors.index, columns=randoms.index)
+    for a in anchors.index:
+        for r in randoms.index:
+            DIST_MTX.loc[a, r] = distance.sqeuclidean(randoms.loc[r, M.decs], anchors.loc[a, M.decs])
+    logging.debug("Distance in configuration spaces calc done.")
 
-        euclidean_dist = lambda a_index: distance.sqeuclidean(anchors.loc[a_index, :],
-                                                              randoms.loc[r_index, :])
-        ds = list(map(euclidean_dist, anchors.index))
-        near_index = anchors.index[np.argmin(ds)]
-        far_index = anchors.index[np.argmax(ds)]
-        R, N, F = randoms.loc[r_index, :], anchors.loc[near_index, :], anchors.loc[far_index, :]
-        l_L = np.dot(R - N, F - N) / np.dot(R - F, N - F)
+    # guessing the objectives. see JC oral slides final.pdf P44 at jianfeng.us
+    for r in randoms.index:
+        n, f = np.argmin(DIST_MTX[r].tolist()), np.argmax(DIST_MTX[r].tolist())
 
-        for o_index in anchor_objs.columns:
-            o_n, o_f = anchor_objs.loc[near_index, o_index], anchor_objs.loc[far_index, o_index]
-            random_objs_hat.loc[r_index, o_index] = o_f + (o_n - o_f) / (l_L + 1)
+        nf = (anchors.loc[n] - anchors.loc[f])[M.decs].values
+        nr = (anchors.loc[n] - randoms.loc[r])[M.decs].values
+        rf = (randoms.loc[r] - anchors.loc[f])[M.decs].values
 
-    # find out non domination
-    anchor_inds = creat_DEAP_individuals(model, anchors, anchor_objs)
-    random_inds = creat_DEAP_individuals(model, randoms, random_objs_hat)
-    all_inds = anchor_inds + random_inds
-    res = sortLogNondominated(all_inds, k=10, first_front_only=True)  # k value is non-sense
-    for i in res:
-        model.eval(i)
-    return res
+        pQ = np.dot(nf, nr) / np.dot(nf, rf)
+        randoms.loc[r, M.objs] = anchors.loc[n, M.objs] + (pQ / (pQ + 1)) * (
+                anchors.loc[f, M.objs] - anchors.loc[n, M.objs])
+
+    # Hypothesis showing
+    # randoms_cp = randoms.copy(deep=True)
+    # randoms_cp[M.objs] = -1
+    # M.eval_pd_df(randoms_cp)
+    # logging.debug('The avg absolute guessing error is:')
+    # error = np.average(np.abs(randoms[M.objs] - randoms_cp[M.objs]), axis=0)
+    # logging.debug(error)
+
+    # collecting and returning
+    all_configs = pd.merge(anchors, randoms, how='outer')
+    cleared, dominated = cull(all_configs[model.objs])
+
+    res = all_configs.loc[cleared]
+    M.eval_pd_df(res, force_eval_all=True)
+    cleared, dominated = cull(res)
+    return res.loc[cleared]
 
 
 if __name__ == '__main__':
@@ -102,6 +102,5 @@ if __name__ == '__main__':
                         level=logging.DEBUG)
     model = get_pom3('p3a')
     startat = time.time()
-    res = riot(model, num_random=100)
-    print("TIME = ", time.time() - startat)
-    write_results_to_txt("debug_writing", res, model, 'riot')
+    res = riot(model)
+    write_results_to_txt("debug_writing", res, model, 'riot', runtime=time.time() - startat)
