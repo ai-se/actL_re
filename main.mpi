@@ -1,0 +1,13 @@
+#!/bin/bash
+
+#SBATCH -J magic101  # job name
+#SBATCH -o out/job.%j.out # name of stdout
+#SBATCH -e err/job.%j.err # name of stderr
+#SBATCH -N 1   # total number of nodes
+#SBATCH -n 15   # total number of mpi cores
+#SBATCH -x c[79-98,101-107]  # avoid
+#SBATCH -t 2:00:00   # rum time (hhmmss)
+
+cd /home/jchen37/actL_re
+source addroot.sh
+/home/jchen37/anaconda3/bin/python3 main.py --model $1 --method $2 --id %j --repeat 15
