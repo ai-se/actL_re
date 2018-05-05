@@ -24,6 +24,7 @@
 import argparse
 import datetime
 import logging
+import multiprocessing as mp
 import random
 import sys
 import time
@@ -51,30 +52,32 @@ def _get_model_for_name(model_str):
     return models[model_str]
 
 
-def exec_nsgaii(model, expId):
+def exec_nsgaii(model, output):
     # TODO CONFIGURATIONS HERE
     mu = 100
     ngen = 20
     cxpb = 0.9
     mutpb = 0.1
     # END OF CONFIGURATION
+
     np.random.seed()
-    model = _get_model_for_name(model) if type(model) is str else model
     startat = time.time()
     res = nsgaii(model, mu, ngen, cxpb, mutpb)
-    write_results_to_txt(expId, res, model, 'nsgaii', runtime=time.time() - startat)
+    output.put(res)
+    output.put(time.time() - startat)
 
 
-def exec_riot(model, expId):
+def exec_riot(model, output):
     # TODO Configuration comes here
     num_anchor = 30
     num_random = 1000
     # End of configuration
+
     np.random.seed()
-    model = _get_model_for_name(model) if type(model) is str else model
     startat = time.time()
     res = riot(model, num_anchor=num_anchor, num_random=num_random)
-    write_results_to_txt(expId, res, model, 'riot', runtime=time.time() - startat)
+    output.put(res)
+    output.put(time.time() - startat)
 
 
 if __name__ == '__main__':
@@ -87,6 +90,8 @@ if __name__ == '__main__':
     args = vars(parser.parse_args())
 
     model = args['model'] or 'p3a'
+    model = _get_model_for_name(model) if type(model) is str else model
+
     repeats = args['repeat'] or 1
     repeats = int(repeats)
 
@@ -97,13 +102,18 @@ if __name__ == '__main__':
     expId = args['id'] or str(random.randint(1, 10000))
     expId = datetime.date.today().strftime("%b%d%Y") + '_' + expId
 
+    all_res = mp.Queue()
     if repeats == 1:
-        exec(model, expId)
+        exec(model, all_res)
     else:
         p = list()
         for _ in range(repeats):
-            p.append(Process(target=exec, args=(model, expId)))
+            p.append(Process(target=exec, args=(model, all_res)))
             p[-1].start()
 
         for i in p:
             i.join()
+
+    # writing all outputs
+    for _ in range(repeats):
+        write_results_to_txt(expId, all_res.get(), model, args['method'], runtime=all_res.get())
