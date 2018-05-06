@@ -54,8 +54,8 @@ def _get_model_for_name(model_str):
 
 def exec_nsgaii(model, output):
     # TODO CONFIGURATIONS HERE
-    mu = 100
-    ngen = 20
+    mu = 200
+    ngen = 50
     cxpb = 0.9
     mutpb = 0.1
     # END OF CONFIGURATION

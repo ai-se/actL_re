@@ -1,6 +1,6 @@
 null:
 autosave:
-    cp records/raw/ ~/tmp/
+	- cp records/raw/ ~/tmp/
 	- git add --all
 	- git commit -m $(msg)
 	- git push origin master
