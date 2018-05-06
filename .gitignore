@@ -105,5 +105,6 @@ venv.bak/
 .mypy_cache/
 
 .idea/
+raw/
 out/
 err/
