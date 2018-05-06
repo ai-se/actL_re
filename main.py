@@ -36,7 +36,7 @@ from Algorithms.NSGAII import nsgaii
 from Algorithms.div_conv import riot
 from Benchmarks.POM3 import get_pom3
 from Benchmarks.XOMO import get_xomo
-from stats.statsReporting import write_results_to_txt
+from Stats.statsReporting import write_results_to_txt
 
 
 def _get_model_for_name(model_str):
@@ -100,7 +100,7 @@ if __name__ == '__main__':
     exec = getattr(sys.modules[__name__], 'exec_' + args['method'])
 
     expId = args['id'] or str(random.randint(1, 10000))
-    expId = datetime.date.today().strftime("%b%d%Y") + '_' + expId
+    expId = datetime.date.today().strftime("%b%d") + '_' + expId
 
     all_res = mp.Queue()
     if repeats == 1:

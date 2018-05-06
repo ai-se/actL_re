@@ -1,0 +1,12 @@
+{"model": "p3a", "algorithm": "nsgaii", "runtime": 3.390259027481079}
+{"model": "p3a", "algorithm": "nsgaii", "hv": 0.758271377418}
+{"model": "p3a", "algorithm": "nsgaii", "gs": 0.8356608623130495}
+{"model": "p3a", "algorithm": "nsgaii", "runtime": 3.8303029537200928}
+{"model": "p3a", "algorithm": "nsgaii", "hv": 0.9112036700000001}
+{"model": "p3a", "algorithm": "nsgaii", "gs": 0.960124746171917}
+{"model": "p3a", "algorithm": "riot", "runtime": 1.3808507919311523}
+{"model": "p3a", "algorithm": "riot", "hv": 0.6197059095799999}
+{"model": "p3a", "algorithm": "riot", "gs": 0.8553631663385924}
+{"model": "p3a", "algorithm": "riot", "runtime": 1.5367937088012695}
+{"model": "p3a", "algorithm": "riot", "hv": 0.38055805940700005}
+{"model": "p3a", "algorithm": "riot", "gs": 1.0}

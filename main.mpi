@@ -10,4 +10,4 @@
 
 cd /home/jchen37/actL_re
 source addroot.sh
-/home/jchen37/anaconda3/bin/python3 main.py --model $1 --method $2 --id %j --repeat 15
+/home/jchen37/anaconda3/bin/python3 main.py --model $1 --method $2 --id hpc --repeat 15

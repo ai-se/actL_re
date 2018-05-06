@@ -33,8 +33,8 @@ import pandas as pd
 from deap import creator, base
 from deap.tools import sortLogNondominated
 
-from stats.gs import GS
-from stats.hypervolume.pyhv import hypervolume
+from Stats.gs import GS
+from Stats.hypervolume.pyhv import hypervolume
 
 """
 In file records/raw/results_***.xml
@@ -211,7 +211,7 @@ def construct_PF0(sinceTimeStamp=0):
 
 
 if __name__ == '__main__':
-    report_quality('debug_writing3')
+    report_quality('May052018_%j')
     # for info, res in _read_next_raw('debug_writing2'):
     #     print(info, res)
     #     pdb.set_trace()

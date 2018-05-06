@@ -35,8 +35,8 @@ import pandas as pd
 from scipy.spatial import distance
 
 from Benchmarks.POM3 import get_pom3
-from stats.pd_dominance import cull
-from stats.statsReporting import write_results_to_txt
+from Stats.pd_dominance import cull
+from Stats.statsReporting import write_results_to_txt
 
 
 def riot(M, num_anchor=30, num_random=1000):

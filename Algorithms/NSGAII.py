@@ -30,7 +30,7 @@ from deap import tools, base
 from deap.tools import sortLogNondominated
 
 from Benchmarks.POM3 import get_pom3
-from stats.statsReporting import write_results_to_txt
+from Stats.statsReporting import write_results_to_txt
 
 
 def _show_pop(pop):
