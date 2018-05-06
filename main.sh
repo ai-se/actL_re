@@ -5,7 +5,7 @@ mkdir out
 mkdir err
 rm out/*
 rm err/*
-for i in p3a p3b p3c;
+for i in p3a p3b p3c osp osp2 flight ground;
 do
 for k in nsgaii riot;
 do
