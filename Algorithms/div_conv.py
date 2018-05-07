@@ -89,7 +89,7 @@ def riot(M, num_anchor=30, num_random=1000):
 
     # collecting and returning
     all_configs = pd.merge(anchors, randoms, how='outer')
-    cleared, dominated = cull(all_configs[model.objs])
+    cleared, dominated = cull(all_configs[M.objs])
 
     res = all_configs.loc[cleared]
     M.eval_pd_df(res, force_eval_all=True)
