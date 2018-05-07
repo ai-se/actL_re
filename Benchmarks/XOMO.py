@@ -111,8 +111,9 @@ class XOMO(object):
 
         return df
 
-    def eval_pd_df(self, df, normalized=True):
+    def eval_pd_df(self, df, normalized=True, force_eval_all=False):
         for ind in df.index:
+            if (not force_eval_all) and df.loc[ind, 'o0_'] != -1: continue
             self._eval(df, ind, normalized=normalized)
 
     def pd_to_deap(self, pandas_df):
