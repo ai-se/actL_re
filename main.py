@@ -52,7 +52,7 @@ def _get_model_for_name(model_str):
     return models[model_str]
 
 
-def exec_nsgaii(model):
+def exec_nsgaii(model, expId):
     # TODO CONFIGURATIONS HERE
     mu = 200
     ngen = 50
@@ -60,24 +60,27 @@ def exec_nsgaii(model):
     mutpb = 0.1
     # END OF CONFIGURATION
 
-    np.random.seed()
+    randL = random.randint(1, 1e6)
+    np.random.seed(randL)
+    random.seed(randL)
+
     startat = time.time()
     res = nsgaii(model, mu, ngen, cxpb, mutpb)
-    # output.put((res, time.time() - startat))
+    write_results_to_txt(expId, res, model, 'nsgaii', runtime=time.time() - startat)
 
 
 def exec_riot(model, expId):
     # TODO Configuration comes here
     num_anchor = 30
-    num_random = 50
+    num_random = 1000
     # End of configuration
+
     randL = random.randint(1, 1e6)
-    # randL = 914239
     np.random.seed(randL)
     random.seed(randL)
+
     startat = time.time()
     res = riot(model, num_anchor=num_anchor, num_random=num_random)
-    print("INFO: res shape = %d in model %s" % (res.shape[0], model.name))
     write_results_to_txt(expId, res, model, 'riot', runtime=time.time() - startat)
 
 
@@ -116,8 +119,3 @@ if __name__ == '__main__':
         for i in p:
             i.start()
             i.join()
-
-    # writing all outputs
-    # while not all_res.empty():
-    #     res, runtime = all_res.get()
-    #     write_results_to_txt(expId, res, model, args['method'], runtime=runtime)
