@@ -30,11 +30,10 @@ import time
 
 import numpy as np
 import pandas as pd
-from deap import creator, base
-from deap.tools import sortLogNondominated
 
 from Stats.gs import GS
 from Stats.hypervolume.pyhv import hypervolume
+from Stats.pd_dominance import cull
 
 """
 In file records/raw/results_***.xml
@@ -149,12 +148,13 @@ def report_quality(experiment_id):
                     break
             PF0 = tf[obj_matrix.columns].values.tolist()
             PFc = obj_matrix.values.tolist()
-            gs = GS(PF0, PFc)
-            json.dump({'model'    : info['model'],
-                       'algorithm': info['algorithm'],
-                       'gs'       : gs
-                       }, f)
-            f.write('\n')
+            if len(PFc) > 1 and len(PF0) > 1:
+                gs = GS(PF0, PFc)
+                json.dump({'model'    : info['model'],
+                           'algorithm': info['algorithm'],
+                           'gs'       : gs
+                           }, f)
+                f.write('\n')
 
             # pdb.set_trace()
 
@@ -181,22 +181,7 @@ def construct_PF0(sinceTimeStamp=0):
     tf_file = open('records/true.txt', 'w')
     for m, all_res in MTX.items():
         objs = [i for i in all_res.columns if i.startswith('o') and i.endswith('_')]
-        O_ = len(objs)
-
-        if not hasattr(creator, 'F%dm' % O_):  # e.g. F3m
-            creator.create('F%dm' % O_, base.Fitness, weights=[-1.0 for _ in range(O_)])
-
-        if not hasattr(creator, 'tfInd'):
-            creator.create('tfInd', int,
-                           fitness=getattr(creator, 'F%dm' % O_))  # use index in pandas dataframe as decision
-
-        pops = list()
-        for ind in all_res.index:
-            individual = creator.tfInd(ind)
-            individual.fitness.values = all_res.loc[ind][objs].tolist()
-            pops.append(individual)
-
-        best = sortLogNondominated(pops, k=10, first_front_only=True)  # k value is non-sense
+        best, dominated = cull(all_res[objs])
         best_res = all_res.loc[best]
 
         tf_file.write('@')
@@ -211,7 +196,8 @@ def construct_PF0(sinceTimeStamp=0):
 
 
 if __name__ == '__main__':
-    report_quality('May052018_%j')
+    # construct_PF0()
+    report_quality('May08_hpc_100881')
     # for info, res in _read_next_raw('debug_writing2'):
     #     print(info, res)
     #     pdb.set_trace()

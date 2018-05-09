@@ -81,4 +81,4 @@ def box_plot_quality(expId_lst, saving=False):
 
 if __name__ == '__main__':
     print("this is demonstration for box-plotting.")
-    box_plot_quality('May052018_errt', saving=True)
+    box_plot_quality('May08_hpc_100881', saving=True)

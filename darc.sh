@@ -5,7 +5,7 @@ a=`ls  __*.txt|head -1`
 b=${a:2}
 cat _*.txt >> $b
 rm __*.txt
-mv $b raw
+mv $b raw/
 cd ..
 unset a
 unset b
