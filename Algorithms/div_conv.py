@@ -27,6 +27,8 @@ Here, we repeat the RIOT, which is focusing on diversity + convergence ?!
 Hypothesis: ??
 """
 import logging
+import pdb
+import random
 import sys
 import time
 
@@ -36,7 +38,6 @@ from scipy.spatial import distance
 
 from Benchmarks.POM3 import get_pom3
 from Stats.pd_dominance import cull
-from Stats.statsReporting import write_results_to_txt
 
 
 def riot(M, num_anchor=30, num_random=1000):
@@ -100,7 +101,17 @@ def riot(M, num_anchor=30, num_random=1000):
 if __name__ == '__main__':
     logging.basicConfig(format='%(asctime)s %(message)s', datefmt='%m/%d/%Y %I:%M:%S %p', stream=sys.stdout,
                         level=logging.DEBUG)
+    # model = get_xomo('flight')
     model = get_pom3('p3a')
     startat = time.time()
-    res = riot(model)
-    write_results_to_txt("debug_writing", res, model, 'riot', runtime=time.time() - startat)
+
+    for repeat in range(100):
+        print(repeat)
+        np.random.seed(545557)
+        random.seed(545557)
+        res = riot(model, num_random=50)
+        print(res)
+        if res.shape[0] < 2:
+            pdb.set_trace()
+        print('=' * 20)
+    # write_results_to_txt("debug_writing", res, model, 'riot', runtime=time.time() - startat)

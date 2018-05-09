@@ -52,7 +52,7 @@ def _get_model_for_name(model_str):
     return models[model_str]
 
 
-def exec_nsgaii(model, output):
+def exec_nsgaii(model):
     # TODO CONFIGURATIONS HERE
     mu = 200
     ngen = 50
@@ -63,26 +63,28 @@ def exec_nsgaii(model, output):
     np.random.seed()
     startat = time.time()
     res = nsgaii(model, mu, ngen, cxpb, mutpb)
-    output.put(res)
-    output.put(time.time() - startat)
+    # output.put((res, time.time() - startat))
 
 
-def exec_riot(model, output):
+def exec_riot(model, expId):
     # TODO Configuration comes here
     num_anchor = 30
-    num_random = 1000
+    num_random = 50
     # End of configuration
-
-    np.random.seed()
+    randL = random.randint(1, 1e6)
+    # randL = 914239
+    np.random.seed(randL)
+    random.seed(randL)
     startat = time.time()
     res = riot(model, num_anchor=num_anchor, num_random=num_random)
-    output.put(res)
-    output.put(time.time() - startat)
+    print("INFO: res shape = %d in model %s" % (res.shape[0], model.name))
+    write_results_to_txt(expId, res, model, 'riot', runtime=time.time() - startat)
 
 
 if __name__ == '__main__':
     # setting up the sys parameters
-    parser = argparse.ArgumentParser(description="Active learning experiment platform for SE requirement engineering")
+    parser = argparse.ArgumentParser(
+        description="Active learning experiment platform for SE requirement engineering")
     parser.add_argument('-m', '--model', help="Set up the exp model or pom3 if not set", required=False)
     parser.add_argument('-i', '--id', help="Set up experiment ID or use random if not set", required=False)
     parser.add_argument('-M', '--method', help="set method, nsgaii/riot", required=True)
@@ -99,21 +101,23 @@ if __name__ == '__main__':
                         level=logging.DEBUG)
     exec = getattr(sys.modules[__name__], 'exec_' + args['method'])
 
-    expId = args['id'] or str(random.randint(1, 10000))
-    expId = datetime.date.today().strftime("%b%d") + '_' + expId
+    id_prefix = args['id'] or ''
 
     all_res = mp.Queue()
     if repeats == 1:
-        exec(model, all_res)
+        expId = '__' + datetime.date.today().strftime("%b%d") + '_' + id_prefix + '_' + str(random.randint(1, 1e7))
+        exec(model, expId, )
     else:
         p = list()
         for _ in range(repeats):
-            p.append(Process(target=exec, args=(model, all_res)))
-            p[-1].start()
+            expId = '__' + datetime.date.today().strftime("%b%d") + '_' + id_prefix + '_' + str(random.randint(1, 1e7))
+            p.append(Process(target=exec, args=(model, expId,)))
 
         for i in p:
+            i.start()
             i.join()
 
     # writing all outputs
-    for _ in range(repeats):
-        write_results_to_txt(expId, all_res.get(), model, args['method'], runtime=all_res.get())
+    # while not all_res.empty():
+    #     res, runtime = all_res.get()
+    #     write_results_to_txt(expId, res, model, args['method'], runtime=runtime)

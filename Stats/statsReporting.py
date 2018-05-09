@@ -75,7 +75,7 @@ def write_results_to_txt(experiment_id, results, model, algorithm_name, runtime=
         os.makedirs('records/raw')
 
     # create the json object to write in to the file
-    info_dict = {'model'  : model.name, 'algorithm': algorithm_name,
+    info_dict = {'model'  : model if type(model) is str else model.name, 'algorithm': algorithm_name,
                  'runtime': runtime, 'writeAt': time.time()}
     with open('records/raw/' + experiment_id + '.txt', 'a+') as f:
         f.write('@')
